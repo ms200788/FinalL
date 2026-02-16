@@ -6,9 +6,6 @@ import urllib.parse
 import urllib.request
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-import time
-import httpx
 
 app = FastAPI()
 
@@ -76,34 +73,6 @@ async def send_to_channel(text):
         urllib.request.urlopen(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", data=data, timeout=10)
     except:
         pass
-
-
-# ================= HEALTH =================
-
-@app.get("/health")
-async def health_check():
-    return {"status": "ok"}
-
-
-# ================= SELF KEEP ALIVE =================
-
-import time
-import httpx
-
-@app.on_event("startup")
-async def startup_event():
-    asyncio.create_task(self_ping())
-
-async def self_ping():
-    await asyncio.sleep(15)
-    port = os.environ.get("PORT", "8000")
-    while True:
-        try:
-            async with httpx.AsyncClient() as client:
-                await client.get(f"http://127.0.0.1:{port}/health")
-        except:
-            pass
-        await asyncio.sleep(240)
 
 # ================= USER ROUTES =================
 @app.get("/{slug}", response_class=HTMLResponse)
@@ -351,3 +320,30 @@ async def webhook(req: Request):
     return {"ok": True}
 
 
+# ================= HEALTH CHECK =================
+
+@app.get("/health")
+async def health_check():
+    return JSONResponse({
+        "status": "ok",
+        "service": "crypto-funnel",
+        "timestamp": int(time.time())
+    })
+
+
+# ================= SELF PING =================
+
+async def self_ping():
+    await asyncio.sleep(10)
+    while True:
+        try:
+            async with httpx.AsyncClient() as client:
+                await client.get(f"{BASE_URL}/health")
+        except:
+            pass
+        await asyncio.sleep(240)  # every 4 minutes
+
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(self_ping())
