@@ -336,7 +336,7 @@ Smart investors don’t rely on luck — they rely on strategy, risk management,
 </div>
 
 <div id="continueBox" style="display:none; margin:16px;">
-<a href="{{BASE_URL}}/{{redirect}}/{{slug}}">
+<a href="{{BASE_URL}}/r/{{redirect}}/{{slug}}">
 <button class="btn">Continue to Investment Portal</button>
 </a>
 </div>
