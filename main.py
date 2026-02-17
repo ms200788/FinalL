@@ -87,6 +87,10 @@ async def send_to_channel(text):
     except:
         pass
 
+@app.get("/test123")
+async def test():
+    return {"working": True}
+
 # ================= HEALTH =================
 @app.get("/health")
 async def health():
