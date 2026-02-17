@@ -92,6 +92,50 @@ async def send_to_channel(text):
 async def health():
     return {"status": "alive"}
 
+# ================= WEBHOOK =================
+@app.post("/webhook")
+async def webhook(req: Request):
+    data = await req.json()
+
+    if "message" not in data:
+        return {"ok": True}
+
+    message = data["message"]
+    chat_id = message["chat"]["id"]
+    user_id = message["from"]["id"]
+    text = message.get("text", "")
+
+    if user_id != OWNER_ID:
+        await send_message(chat_id, "Not authorized.")
+        return {"ok": True}
+
+    if text.startswith("/create"):
+        parts = text.split(" ", 1)
+        if len(parts) != 2:
+            await send_message(chat_id, "Usage:\n/create https://example.com")
+            return {"ok": True}
+
+        link = parts[1].strip()
+
+        for _ in range(10):
+            slug = generate_slug()
+            if slug not in funnels:
+                break
+        else:
+            await send_message(chat_id, "Failed to generate slug.")
+            return {"ok": True}
+
+        redirect = generate_redirect()
+        await save_funnel(slug, redirect, link)
+
+        await send_to_channel(f"{slug}|{redirect}|{link}")
+
+        await send_message(chat_id, f"User URL:\n{BASE_URL}/{slug}")
+        await send_message(chat_id, f"Redirect URL:\n{BASE_URL}/{redirect}/{slug}")
+
+    return {"ok": True}
+
+
 # ================= USER PAGE =================
 @app.get("/{slug}", response_class=HTMLResponse)
 async def user_page(slug: str):
@@ -158,45 +202,3 @@ async def redirect_page(redirect: str, slug: str):
         return HTMLResponse("Invalid Link", status_code=403)
     return RedirectResponse(funnel[1])
 
-# ================= WEBHOOK =================
-@app.post("/webhook")
-async def webhook(req: Request):
-    data = await req.json()
-
-    if "message" not in data:
-        return {"ok": True}
-
-    message = data["message"]
-    chat_id = message["chat"]["id"]
-    user_id = message["from"]["id"]
-    text = message.get("text", "")
-
-    if user_id != OWNER_ID:
-        await send_message(chat_id, "Not authorized.")
-        return {"ok": True}
-
-    if text.startswith("/create"):
-        parts = text.split(" ", 1)
-        if len(parts) != 2:
-            await send_message(chat_id, "Usage:\n/create https://example.com")
-            return {"ok": True}
-
-        link = parts[1].strip()
-
-        for _ in range(10):
-            slug = generate_slug()
-            if slug not in funnels:
-                break
-        else:
-            await send_message(chat_id, "Failed to generate slug.")
-            return {"ok": True}
-
-        redirect = generate_redirect()
-        await save_funnel(slug, redirect, link)
-
-        await send_to_channel(f"{slug}|{redirect}|{link}")
-
-        await send_message(chat_id, f"User URL:\n{BASE_URL}/{slug}")
-        await send_message(chat_id, f"Redirect URL:\n{BASE_URL}/{redirect}/{slug}")
-
-    return {"ok": True}
