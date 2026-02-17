@@ -4,6 +4,7 @@ import string
 import asyncio
 import urllib.parse
 import urllib.request
+import json
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
@@ -18,7 +19,7 @@ BASE_URL = os.getenv("BASE_URL", "").rstrip("/")
 TXT_FILE = "database.txt"
 
 # ================= MEMORY STORAGE =================
-funnels = {}  # slug -> (redirect, link)
+funnels = {}
 lock = asyncio.Lock()
 
 # ================= LOAD DATA =================
@@ -87,9 +88,29 @@ async def send_to_channel(text):
     except:
         pass
 
-@app.get("/test123")
-async def test():
-    return {"working": True}
+# ================= AUTO WEBHOOK SETUP =================
+async def setup_webhook():
+    if not BOT_TOKEN or not BASE_URL:
+        print("Missing BOT_TOKEN or BASE_URL")
+        return
+    try:
+        urllib.request.urlopen(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook",
+            timeout=10
+        )
+        webhook_url = f"{BASE_URL}/webhook"
+        response = urllib.request.urlopen(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/setWebhook?url={webhook_url}",
+            timeout=10
+        )
+        result = json.loads(response.read().decode())
+        print("Webhook setup:", result)
+    except Exception as e:
+        print("Webhook setup failed:", e)
+
+@app.on_event("startup")
+async def startup_event():
+    await setup_webhook()
 
 # ================= HEALTH =================
 @app.get("/health")
@@ -121,27 +142,19 @@ async def webhook(req: Request):
 
         link = parts[1].strip()
 
-        for _ in range(10):
-            slug = generate_slug()
-            if slug not in funnels:
-                break
-        else:
-            await send_message(chat_id, "Failed to generate slug.")
-            return {"ok": True}
-
+        slug = generate_slug()
         redirect = generate_redirect()
         await save_funnel(slug, redirect, link)
 
         await send_to_channel(f"{slug}|{redirect}|{link}")
 
-        await send_message(chat_id, f"User URL:\n{BASE_URL}/{slug}")
-        await send_message(chat_id, f"Redirect URL:\n{BASE_URL}/{redirect}/{slug}")
+        await send_message(chat_id, f"User URL:\n{BASE_URL}/u/{slug}")
+        await send_message(chat_id, f"Redirect URL:\n{BASE_URL}/r/{redirect}/{slug}")
 
     return {"ok": True}
 
-
 # ================= USER PAGE =================
-@app.get("/{slug}", response_class=HTMLResponse)
+@app.get("/u/{slug}", response_class=HTMLResponse)
 async def user_page(slug: str):
     funnel = await get_by_slug(slug)
     if not funnel:
@@ -155,7 +168,6 @@ async def user_page(slug: str):
     <title>Crypto Wealth Secrets</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
-    let timerDone = false;
     let verified = false;
 
     function startTimer() {{
@@ -164,7 +176,6 @@ async def user_page(slug: str):
             document.getElementById("t").innerText = t;
             if(t<=0) {{
                 clearInterval(timer);
-                timerDone=true;
                 document.getElementById("verifyBox").style.display="block";
             }}
             t--;
@@ -190,7 +201,7 @@ async def user_page(slug: str):
         </div>
 
         <div id="continueBox" style="display:none;margin-top:20px;">
-            <a href="{BASE_URL}/{redirect}/{slug}">
+            <a href="{BASE_URL}/r/{redirect}/{slug}">
                 <button>Continue to Investment Portal</button>
             </a>
         </div>
@@ -199,10 +210,9 @@ async def user_page(slug: str):
     """
 
 # ================= REDIRECT =================
-@app.get("/{redirect}/{slug}")
+@app.get("/r/{redirect}/{slug}")
 async def redirect_page(redirect: str, slug: str):
     funnel = await get_by_redirect(redirect, slug)
     if not funnel:
         return HTMLResponse("Invalid Link", status_code=403)
     return RedirectResponse(funnel[1])
-
