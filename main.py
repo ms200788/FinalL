@@ -166,7 +166,7 @@ async def user_page(slug: str):
     <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Crypto Wealth Secrets</title>
+<title>Crypto Wealth</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body {{ font-family: Arial; line-height:1.8; margin:0; background:#0f2027; color:#eaeaea; }}
@@ -189,7 +189,7 @@ function startTimer() {{
         if(t<=0) {{
             clearInterval(timer);
             timerDone=true;
-            document.getElementById("timerText").innerText="Please verify to unlock premium insights";
+            document.getElementById("timerText").innerText="Scroll down to Verify";
             document.getElementById("verifyBox").style.display="block";
             checkUnlock();
         }}
@@ -213,14 +213,14 @@ function checkUnlock() {{
 </head>
 <body>
 
-<div class="topbar">Crypto Wealth Secrets</div>
+<div class="topbar">Crypto Wealth</div>
 
 <div class="card">
 
-<h1>How Smart Investors Build Wealth with Crypto in 2026</h1>
+<h1>𝗛𝗼𝘄 𝗦𝗺𝗮𝗿𝘁 𝗜𝗻𝘃𝗲𝘀𝘁𝗼𝗿𝘀 𝗕𝘂𝗶𝗹𝗱 𝗪𝗲𝗮𝗹𝘁𝗵 𝘄𝗶𝘁𝗵 𝗖𝗿𝘆𝗽𝘁𝗼 𝗶𝗻 𝟮𝟬𝟮𝟲</h1>
 
 <div class="timer">
-<p id="timerText">Please wait <b id="t">20</b> seconds while premium insights load</p>
+<p id="timerText">Please wait <b id="t">20</b> seconds.We are loading...</p>
 </div>
 
 
@@ -332,12 +332,12 @@ Smart investors don’t rely on luck — they rely on strategy, risk management,
 </div>
 
 <div id="verifyBox" style="display:none; margin:16px;">
-<button class="btn" onclick="verifyNow()">Unlock Premium Crypto Guide</button>
+<button class="btn" onclick="verifyNow()">𝗩𝗲𝗿𝗶𝗳𝘆 𝗡𝗼𝘄</button>
 </div>
 
 <div id="continueBox" style="display:none; margin:16px;">
 <a href="{BASE_URL}/r/{redirect}/{slug}">
-<button class="btn">Continue to Investment Portal</button>
+<button class="btn">𝗖𝗼𝗻𝘁𝗶𝗻𝘂𝗲</button>
 </a>
 </div>
 
